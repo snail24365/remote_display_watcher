@@ -4,8 +4,6 @@ import { join } from 'path'
 import { Server } from 'socket.io'
 import icon from '../../resources/icon.png?asset'
 
-const io = new Server(3001)
-
 let mainWindow
 function createWindow(): void {
   // Create the browser window.
@@ -77,12 +75,22 @@ app.on('window-all-closed', () => {
   }
 })
 
+let io: Server
 // Server mode: handle incoming connections and sending desktop capture data
-io.on('connection', (socket) => {
-  console.log('Client connected')
-  ipcMain.on('send-desktop-capture', (event, data) => {
-    socket.emit('desktop-data', data)
+
+app.on('ready', () => {
+  // port
+  ipcMain.on('create-server', () => {
+    io = new Server(3001)
+    io.on('connection', (socket) => {
+      console.log('Client connected')
+      ipcMain.on('send-desktop-capture', (event, data) => {
+        socket.emit('desktop-data', data)
+      })
+    })
   })
+
+  ipcMain.on('delete-server', () => {})
 })
 
 ipcMain.on('start-capture', async (event) => {
